@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+
+def get_args():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--infile', required=True)
+    parser.add_argument('--outfile', required=True)
+    parser.add_argument('--dtlow', type=float, default=0)
+    parser.add_argument('--dthigh', type=float, default=2)
+    parser.add_argument('--binsize', type=float, default=0.02)
+    return parser.parse_args()
+
+
+def main():
+    from xtcorr.util import load_sim, save_corr
+    from xtcorr.correlate import correlate
+
+    args = get_args()
+    times1, times2, meta = load_sim(args.infile)
+
+    dts, hist = correlate(
+        times1=times1,
+        times2=times2,
+        dtlow=args.dtlow,
+        dthigh=args.dthigh,
+        binsize=args.binsize,
+    )
+
+    save_corr(outfile=args.outfile, dts=dts, hist=hist)
+
+
+if __name__ == '__main__':
+    main()

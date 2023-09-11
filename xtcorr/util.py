@@ -1,9 +1,9 @@
-def save_sim(outfile, times1, times2, meta):
+def save_sim(outfile, data1, data2, meta):
     import fitsio
     print('writing:', outfile)
     with fitsio.FITS(outfile, 'rw', clobber=True) as fits:
-        fits.write(times1, extname='times1')
-        fits.write(times2, extname='times2')
+        fits.write(data1, extname='data1')
+        fits.write(data2, extname='data2')
         fits.write(meta, extname='meta')
 
 
@@ -11,11 +11,21 @@ def load_sim(infile):
     import fitsio
     print('reading:', infile)
     with fitsio.FITS(infile) as fits:
-        times1 = fits['times1'].read()
-        times2 = fits['times2'].read()
+        data1 = fits['data1'].read()
+        data2 = fits['data2'].read()
         meta = fits['meta'].read()
 
-    return times1, times2, meta
+    # numba doesn't do non native byte order
+    data1 = _byteswap(data1)
+    data2 = _byteswap(data2)
+
+    return data1, data2, meta
+
+
+def _byteswap(arr):
+    arr.byteswap(inplace=True)
+    arr = arr.newbyteorder('=')
+    return arr
 
 
 def save_corr(outfile, dts, hist):

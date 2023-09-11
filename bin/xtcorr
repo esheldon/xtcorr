@@ -17,11 +17,11 @@ def main():
     from xtcorr.correlate import correlate
 
     args = get_args()
-    times1, times2, meta = load_sim(args.infile)
+    data1, data2, meta = load_sim(args.infile)
 
     dts, hist = correlate(
-        times1=times1,
-        times2=times2,
+        data1=data1,
+        data2=data2,
         dtlow=args.dtlow,
         dthigh=args.dthigh,
         binsize=args.binsize,

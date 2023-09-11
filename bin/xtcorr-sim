@@ -22,7 +22,7 @@ def main(seed, integration_time, delay, delay_sigma, outfile):
     rng = np.random.RandomState(seed)
 
     print('simulating')
-    times1, times2 = simulate_streams(
+    data1, data2 = simulate_streams(
         rng,
         delay=delay,
         delay_sigma=delay_sigma,
@@ -33,7 +33,7 @@ def main(seed, integration_time, delay, delay_sigma, outfile):
         seed=seed, integration_time=integration_time, delay=delay,
         delay_sigma=delay_sigma,
     )
-    save_sim(outfile=args.outfile, times1=times1, times2=times2, meta=meta)
+    save_sim(outfile=args.outfile, data1=data1, data2=data2, meta=meta)
 
 
 if __name__ == '__main__':

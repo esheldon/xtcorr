@@ -3,7 +3,7 @@ from numba import njit
 
 
 @njit
-def correlate(data1, data2, dtlow, dthigh, binsize):
+def correlate(data1, data2, dtlow, dthigh, tbinsize, xbinsize):
     """
     cross correlate two time streams
 
@@ -17,6 +17,8 @@ def correlate(data1, data2, dtlow, dthigh, binsize):
     dthigh: float
         Highest time difference of stream 2 relative to stream 1
         Events from stream 2 will be within the window [dtlow, dthigh]
+    tbinsize: float
+        Binsize for time
 
     Returns
     -------
@@ -27,15 +29,16 @@ def correlate(data1, data2, dtlow, dthigh, binsize):
     """
     window = (dthigh - dtlow)
 
-    nbin = int(window / binsize)
+    nbin = int(window / tbinsize)
     hist = np.zeros(nbin)
     dts = np.linspace(start=dtlow, stop=dthigh, num=nbin)
 
     n2 = data2.size
 
-    for t1 in data1['time']:
-        tlow = t1 + dtlow
-        thigh = t1 + dthigh
+    for tdata1 in data1:
+
+        tlow = tdata1['time'] + dtlow
+        thigh = tdata1['time'] + dthigh
 
         # times2[i2low] strictly >= val
         i2low = bisect_left(data2['time'], tlow, 0, n2-1)
@@ -47,7 +50,7 @@ def correlate(data1, data2, dtlow, dthigh, binsize):
         for i2 in range(i2low, i2high+1):
             t2 = data2['time'][i2]
 
-            binnum = int((t2 - tlow) / binsize)
+            binnum = int((t2 - tlow) / tbinsize)
             if binnum < nbin:
                 hist[binnum] += 1
 

@@ -8,7 +8,8 @@ def get_args():
     parser.add_argument('--outfile', required=True)
     parser.add_argument('--dtlow', type=float, default=0)
     parser.add_argument('--dthigh', type=float, default=2)
-    parser.add_argument('--binsize', type=float, default=0.02)
+    parser.add_argument('--tbinsize', type=float, default=0.02)
+    parser.add_argument('--xbinsize', type=float, default=1)
     return parser.parse_args()
 
 
@@ -24,7 +25,8 @@ def main():
         data2=data2,
         dtlow=args.dtlow,
         dthigh=args.dthigh,
-        binsize=args.binsize,
+        tbinsize=args.tbinsize,
+        xbinsize=args.xbinsize,
     )
 
     save_corr(outfile=args.outfile, dts=dts, hist=hist)

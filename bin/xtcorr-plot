@@ -32,7 +32,16 @@ def doplot(data, outfile):
     #     (data['dt'] > 0.6) & (data['dt'] < 1.4)
     # )
     # yxhist = data['hist'][:, :, w].sum(axis=2)
-    m = axs[1].imshow(yxhist)
+    extent = [
+        data['dx'].min(),
+        data['dx'].max(),
+        data['dy'].min(),
+        data['dy'].max(),
+    ]
+    m = axs[1].imshow(
+        yxhist,
+        extent=extent,
+    )
     axs[1].colorbar(m)
 
     print('writing:', outfile)

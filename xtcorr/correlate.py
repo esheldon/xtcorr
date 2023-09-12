@@ -1,9 +1,3 @@
-"""
-TODO:
-
-    - why building up at x/y = 0?
-    - why not centered on pixel?
-"""
 import numpy as np
 from numba import njit
 

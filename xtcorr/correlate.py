@@ -73,16 +73,19 @@ def correlate(
 
             dt = tdata2['time'] - tdata1['time']
             tbinnum = int((dt - dtlow) / tbinsize)
-            if 0 <= tbinnum < ntbin:
+
+            # due to int truncation issues negative near zero, we check float
+            # value
+            if dt > dtlow and tbinnum < ntbin:
 
                 dx = tdata2['x'] - tdata1['x']
-
                 xbinnum = int((dx - dxlow) / xbinsize)
-                # due to int truncation issues near zero, we check float value
+
                 if dx > dxlow and xbinnum < nxbin:
 
                     dy = tdata2['y'] - tdata1['y']
                     ybinnum = int((dy - dylow) / ybinsize)
+
                     if dy > dylow and ybinnum < nybin:
                         hist[ybinnum, xbinnum, tbinnum] += 1
 

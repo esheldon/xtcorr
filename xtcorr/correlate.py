@@ -78,11 +78,12 @@ def correlate(
                 dx = tdata2['x'] - tdata1['x']
 
                 xbinnum = int((dx - dxlow) / xbinsize)
-                if 0 <= xbinnum < nxbin:
+                # due to int truncation issues near zero, we check float value
+                if dx > dxlow and xbinnum < nxbin:
 
                     dy = tdata2['y'] - tdata1['y']
                     ybinnum = int((dy - dylow) / ybinsize)
-                    if 0 <= ybinnum < nybin:
+                    if dy > dylow and ybinnum < nybin:
                         hist[ybinnum, xbinnum, tbinnum] += 1
 
     out_dt = np.linspace(start=dtlow, stop=dthigh, num=ntbin)

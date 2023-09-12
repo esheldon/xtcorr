@@ -1,9 +1,20 @@
+"""
+TODO:
+
+    - why building up at x/y = 0?
+    - why not centered on pixel?
+"""
 import numpy as np
 from numba import njit
 
 
 @njit
-def correlate(data1, data2, dtlow, dthigh, tbinsize, xbinsize):
+def correlate(
+    data1, data2,
+    dtlow, dthigh, tbinsize,
+    dylow, dyhigh, ybinsize,
+    dxlow, dxhigh, xbinsize,
+):
     """
     cross correlate two time streams
 
@@ -22,16 +33,26 @@ def correlate(data1, data2, dtlow, dthigh, tbinsize, xbinsize):
 
     Returns
     -------
-    dts: array
-        The time differences corresponding to the histogram
-    hist: array
-        Histogram counting events with time differences given in dts
+    result: dict
+        The dictionary has entries
+        dt: array
+            The time differences corresponding to the histogram
+        dy: array
+            The y differences corresponding to the histogram
+        dx: array
+            The x differences corresponding to the histogram
+        hist: array
+            Histogram counting events (ny, nx, nt)
     """
-    window = (dthigh - dtlow)
+    twindow = (dthigh - dtlow)
+    ywindow = (dyhigh - dylow)
+    xwindow = (dxhigh - dxlow)
 
-    nbin = int(window / tbinsize)
-    hist = np.zeros(nbin)
-    dts = np.linspace(start=dtlow, stop=dthigh, num=nbin)
+    ntbin = int(twindow / tbinsize)
+    nxbin = int(xwindow / xbinsize)
+    nybin = int(ywindow / ybinsize)
+
+    hist = np.zeros((nybin, nxbin, ntbin))
 
     n2 = data2.size
 
@@ -48,13 +69,27 @@ def correlate(data1, data2, dtlow, dthigh, tbinsize, xbinsize):
         # i2high = bisect_right(times2, thigh, 0, n2-1)
 
         for i2 in range(i2low, i2high+1):
-            t2 = data2['time'][i2]
+            tdata2 = data2[i2]
 
-            binnum = int((t2 - tlow) / tbinsize)
-            if binnum < nbin:
-                hist[binnum] += 1
+            dt = tdata2['time'] - tdata1['time']
+            tbinnum = int((dt - dtlow) / tbinsize)
+            if 0 <= tbinnum < ntbin:
 
-    return dts, hist
+                dx = tdata2['x'] - tdata1['x']
+
+                xbinnum = int((dx - dxlow) / xbinsize)
+                if 0 <= xbinnum < nxbin:
+
+                    dy = tdata2['y'] - tdata1['y']
+                    ybinnum = int((dy - dylow) / ybinsize)
+                    if 0 <= ybinnum < nybin:
+                        hist[ybinnum, xbinnum, tbinnum] += 1
+
+    out_dt = np.linspace(start=dtlow, stop=dthigh, num=ntbin)
+    out_dx = np.linspace(start=dxlow, stop=dxhigh, num=nxbin)
+    out_dy = np.linspace(start=dylow, stop=dyhigh, num=nybin)
+
+    return out_dt, out_dy, out_dx, hist
 
 
 @njit

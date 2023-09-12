@@ -10,11 +10,11 @@ def simulate_streams(
     rate=1.0,
     delay=1.0,
     delay_sigma=0.1,
-    dx=2.0,
-    dx_sigma=0.1,
-    dy=2.0,
-    dy_sigma=0.1,
-    background_rate=10.0,
+    dx=10.0,
+    dx_sigma=1,
+    dy=20.0,
+    dy_sigma=1,
+    background_rate=0.001,  # per pixel
 ):
     """
     Simulate streams of data with real pairs and background
@@ -26,9 +26,9 @@ def simulate_streams(
     tend: float
         End time
     rate: float
-        Rate of signal in same units as tstart and tend
+        Rate of signal in same units as tstart and tend, over all pixels
     background_rate: float
-        Rate of background in same units as tstart and tend
+        Rate of background in same units as tstart and tend, per pixel
 
     Returns
     --------
@@ -41,8 +41,11 @@ def simulate_streams(
     dt = tend - tstart
     ndata = rng.poisson(rate * dt)
 
-    nback1 = rng.poisson(background_rate * dt)
-    nback2 = rng.poisson(background_rate * dt)
+    npix = nx * ny
+    nback = background_rate * npix * dt
+    print('nback:', nback)
+    nback1 = rng.poisson(nback)
+    nback2 = rng.poisson(nback)
 
     ntot1 = ndata + nback1
     ntot2 = ndata + nback2
@@ -54,8 +57,11 @@ def simulate_streams(
         rng=rng, num=ntot2, tstart=tstart, tend=tend, nx=nx, ny=ny,
     )
 
-    # "source" is uniform in location and time, but with offsets
-    # for other stream
+    # "source" is uniform in time, so keep existing times.
+    # offsets are gaussian in x/y
+    data1['x'][:ndata] = rng.normal(loc=nx/2, scale=3, size=ndata)
+    data1['y'][:ndata] = rng.normal(loc=ny/2, scale=3, size=ndata)
+
     delays = rng.normal(loc=delay, scale=delay_sigma, size=ndata)
     dxvals = rng.normal(loc=dx, scale=dx_sigma, size=ndata)
     dyvals = rng.normal(loc=dy, scale=dy_sigma, size=ndata)

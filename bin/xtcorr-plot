@@ -13,13 +13,26 @@ def doplot(data, outfile):
     import matplotlib.pyplot as mplt
     import numpy as np
 
-    err = np.sqrt(data['hist'])
-    fig, ax = mplt.subplots()
-    ax.set(
+    fig, axs = mplt.subplots(ncols=2, figsize=(14, 6))
+    axs[0].set(
         xlabel='delay [ns]',
         ylabel='count',
     )
-    ax.errorbar(data['dt'], data['hist'], err, linestyle='')
+    axs[1].set(
+        xlabel='dx',
+        ylabel='dy',
+    )
+
+    thist = data['hist'].sum(axis=(0, 1))
+    terr = np.sqrt(thist)
+    axs[0].errorbar(data['dt'], thist, terr, linestyle='')
+
+    yxhist = data['hist'].sum(axis=2)
+    # w, = np.where(
+    #     (data['dt'] > 0.6) & (data['dt'] < 1.4)
+    # )
+    # yxhist = data['hist'][:, :, w].sum(axis=2)
+    axs[1].imshow(yxhist)
 
     print('writing:', outfile)
     mplt.savefig(outfile)

@@ -6,10 +6,18 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--infile', required=True)
     parser.add_argument('--outfile', required=True)
+
     parser.add_argument('--dtlow', type=float, default=0)
     parser.add_argument('--dthigh', type=float, default=2)
     parser.add_argument('--tbinsize', type=float, default=0.02)
-    parser.add_argument('--xbinsize', type=float, default=1)
+
+    parser.add_argument('--dxlow', type=float, default=10 - 5 * 1 - 0.5)
+    parser.add_argument('--dxhigh', type=float, default=10 + 5 * 1 + 0.5)
+    parser.add_argument('--xbinsize', type=float, default=1.0)
+
+    parser.add_argument('--dylow', type=float, default=20 - 5 * 1 - 0.5)
+    parser.add_argument('--dyhigh', type=float, default=20 + 5 * 1 + 0.5)
+    parser.add_argument('--ybinsize', type=float, default=1.0)
     return parser.parse_args()
 
 
@@ -20,16 +28,24 @@ def main():
     args = get_args()
     data1, data2, meta = load_sim(args.infile)
 
-    dts, hist = correlate(
+    dt, dy, dx, hist = correlate(
         data1=data1,
         data2=data2,
+
         dtlow=args.dtlow,
         dthigh=args.dthigh,
         tbinsize=args.tbinsize,
+
+        dxlow=args.dxlow,
+        dxhigh=args.dxhigh,
         xbinsize=args.xbinsize,
+
+        dylow=args.dylow,
+        dyhigh=args.dyhigh,
+        ybinsize=args.ybinsize,
     )
 
-    save_corr(outfile=args.outfile, dts=dts, hist=hist)
+    save_corr(outfile=args.outfile, dt=dt, dx=dx, dy=dy, hist=hist)
 
 
 if __name__ == '__main__':

@@ -28,26 +28,27 @@ def _byteswap(arr):
     return arr
 
 
-def save_corr(outfile, dts, hist):
-    import numpy as np
+def save_corr(outfile, dt, dy, dx, hist):
     import fitsio
 
-    dtype = [('dt', 'f8'), ('hist', 'i8')]
-    output = np.zeros(dts.size, dtype=dtype)
-    output['dt'] = dts
-    output['hist'] = hist
-
+    print(hist.shape)
     print('writing:', outfile)
     with fitsio.FITS(outfile, 'rw', clobber=True) as fits:
-        fits.write(output, extname='corr')
+        fits.write(dt, extname='dt')
+        fits.write(dy, extname='dy')
+        fits.write(dx, extname='dx')
+        fits.write(hist, extname='hist')
 
 
 def load_corr(infile):
     import fitsio
 
+    data = {}
+
     print('reading:', infile)
     with fitsio.FITS(infile) as fits:
-        data = fits['corr'].read()
+        for key in ['dt', 'dy', 'dx', 'hist']:
+            data[key] = fits[key].read()
 
     return data
 

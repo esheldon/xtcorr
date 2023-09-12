@@ -44,6 +44,7 @@ def correlate(
         hist: array
             Histogram counting events (ny, nx, nt)
     """
+
     twindow = (dthigh - dtlow)
     ywindow = (dyhigh - dylow)
     xwindow = (dxhigh - dxlow)
@@ -72,21 +73,19 @@ def correlate(
             tdata2 = data2[i2]
 
             dt = tdata2['time'] - tdata1['time']
-            tbinnum = int((dt - dtlow) / tbinsize)
+            tbinnum = _get_binint((dt - dtlow) / tbinsize)
 
-            # due to int truncation issues negative near zero, we check float
-            # value
-            if dt > dtlow and tbinnum < ntbin:
+            if 0 <= tbinnum < ntbin:
 
                 dx = tdata2['x'] - tdata1['x']
-                xbinnum = int((dx - dxlow) / xbinsize)
+                xbinnum = _get_binint((dx - dxlow) / xbinsize)
 
-                if dx > dxlow and xbinnum < nxbin:
+                if 0 <= xbinnum < nxbin:
 
                     dy = tdata2['y'] - tdata1['y']
-                    ybinnum = int((dy - dylow) / ybinsize)
+                    ybinnum = _get_binint((dy - dylow) / ybinsize)
 
-                    if dy > dylow and ybinnum < nybin:
+                    if 0 <= ybinnum < nybin:
                         hist[ybinnum, xbinnum, tbinnum] += 1
 
     out_dt = np.linspace(start=dtlow, stop=dthigh, num=ntbin)
@@ -94,6 +93,11 @@ def correlate(
     out_dy = np.linspace(start=dylow, stop=dyhigh, num=nybin)
 
     return out_dt, out_dy, out_dx, hist
+
+
+@njit
+def _get_binint(val):
+    return int(np.floor(val))
 
 
 @njit

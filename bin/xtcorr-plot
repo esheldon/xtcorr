@@ -10,10 +10,10 @@ def get_args():
 
 
 def doplot(data, outfile):
-    import matplotlib.pyplot as mplt
+    import proplot as pplt
     import numpy as np
 
-    fig, axs = mplt.subplots(ncols=2, figsize=(14, 6))
+    fig, axs = pplt.subplots(ncols=2, share=False)
     axs[0].set(
         xlabel='delay [ns]',
         ylabel='count',
@@ -32,10 +32,11 @@ def doplot(data, outfile):
     #     (data['dt'] > 0.6) & (data['dt'] < 1.4)
     # )
     # yxhist = data['hist'][:, :, w].sum(axis=2)
-    axs[1].imshow(yxhist)
+    m = axs[1].imshow(yxhist)
+    axs[1].colorbar(m)
 
     print('writing:', outfile)
-    mplt.savefig(outfile)
+    fig.savefig(outfile)
 
 
 def main():

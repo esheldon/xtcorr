@@ -19,7 +19,7 @@ def main(seed, integration_time, delay, delay_sigma, outfile):
     from xtcorr.sim import simulate_streams
     from xtcorr.util import save_sim, make_sim_meta
 
-    rng = np.random.RandomState(seed)
+    rng = np.random.default_rng(seed)
 
     print('simulating')
     data1, data2 = simulate_streams(

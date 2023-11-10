@@ -7,45 +7,35 @@ def get_args():
     parser.add_argument('--infile', required=True)
     parser.add_argument('--outfile', required=True)
 
-    parser.add_argument('--dtlow', type=float, default=0)
+    parser.add_argument('--dtlow', type=float, default=-2)
     parser.add_argument('--dthigh', type=float, default=2)
     parser.add_argument('--tbinsize', type=float, default=0.02)
-
-    parser.add_argument('--dxlow', type=float, default=10 - 5 * 1 - 0.5)
-    parser.add_argument('--dxhigh', type=float, default=10 + 5 * 1 + 0.5)
-    parser.add_argument('--xbinsize', type=float, default=1.0)
-
-    parser.add_argument('--dylow', type=float, default=20 - 5 * 1 - 0.5)
-    parser.add_argument('--dyhigh', type=float, default=20 + 5 * 1 + 0.5)
-    parser.add_argument('--ybinsize', type=float, default=1.0)
     return parser.parse_args()
 
 
 def main():
-    from xtcorr.util import load_sim, save_corr
+    from xtcorr.util import load_sim, save_corr, pack_corr_results
+    from xtcorr.constants import PAIRS
     from xtcorr.correlate import correlate
 
     args = get_args()
-    data1, data2, meta = load_sim(args.infile)
+    indata, meta = load_sim(args.infile)
 
-    dt, dy, dx, hist = correlate(
-        data1=data1,
-        data2=data2,
+    pair_results = {}
+    for pair in PAIRS:
+        key = pair[0] + pair[1]
 
-        dtlow=args.dtlow,
-        dthigh=args.dthigh,
-        tbinsize=args.tbinsize,
+        dt, hist = correlate(
+            data1=indata[pair[0]],
+            data2=indata[pair[1]],
 
-        dxlow=args.dxlow,
-        dxhigh=args.dxhigh,
-        xbinsize=args.xbinsize,
+            dtlow=args.dtlow,
+            dthigh=args.dthigh,
+            tbinsize=args.tbinsize,
+        )
+        pair_results[key] = pack_corr_results(dt, hist)
 
-        dylow=args.dylow,
-        dyhigh=args.dyhigh,
-        ybinsize=args.ybinsize,
-    )
-
-    save_corr(outfile=args.outfile, dt=dt, dx=dx, dy=dy, hist=hist)
+    save_corr(outfile=args.outfile, pair_results=pair_results)
 
 
 if __name__ == '__main__':

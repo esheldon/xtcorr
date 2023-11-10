@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit
 from .correlate import bisect_left, bisect_right
+from .constants import DETNAMES
 
 
 def simulate_streams(
@@ -9,7 +10,7 @@ def simulate_streams(
     tend=10000.0,
     rate1=1.0,
     rate2=1.0,
-    delta=1.0,
+    delta=0.0,
     dt=0.02,
 ):
     """
@@ -61,21 +62,22 @@ def simulate_streams(
     data1.sort(order='time')
     data2.sort(order='time')
 
-    P12_02_23 = (1/8) * (1 + np.cos(delta))
+    # these max at 1/4
+    P12_02_13 = (1/8) * (1 + np.cos(delta))
     P12_03_12 = (1/8) * (1 - np.cos(delta))
+    print(f'P12_02_13: {P12_02_13} P12_03_12: {P12_03_12}')
 
     distribute_coincidences(
         rng=rng,
         data1=data1,
         data2=data2,
         dt=dt,
-        P12_02_23=P12_02_23,
+        P12_02_13=P12_02_13,
         P12_03_12=P12_03_12,
     )
 
-    detnames = ['c', 'd', 'g', 'h']
     output = {}
-    for detector, detname in enumerate(range(len(detnames))):
+    for detector, detname in enumerate(DETNAMES):
         w1, = np.where(data1['detector'] == detector)
         w2, = np.where(data2['detector'] == detector)
         output[detname] = make_output_data(data1[w1], data2[w2])
@@ -84,7 +86,7 @@ def simulate_streams(
 
 
 @njit
-def distribute_coincidences(rng, data1, data2, dt, P12_02_23, P12_03_12):
+def distribute_coincidences(rng, data1, data2, dt, P12_02_13, P12_03_12):
     """
     Given a stream of photons from a single source, distribute
     to detectors.  Identify coincidences and distribute appropriately
@@ -115,6 +117,8 @@ def distribute_coincidences(rng, data1, data2, dt, P12_02_23, P12_03_12):
         i2high = bisect_right(data2['time'], thigh, i2low, n2-1)
 
         for i2 in range(i2low, i2high+1):
+            tdata2 = data2[i2]
+
             # found a coincidence, we will assign detectors according
             # to the probabilities
             r = rng.uniform()
@@ -123,26 +127,30 @@ def distribute_coincidences(rng, data1, data2, dt, P12_02_23, P12_03_12):
                 # distribute equally to cc, dd, gg, hh
                 detector = int(r * 8)
                 tdata1['detector'] = detector
-                data2['detector'][i2] = detector
+                tdata2['detector'] = detector
             else:
-                # the rest add to 0.5, so we can test r-0.5 against them
+                # the rest, from 0.5 to 1, go to these.
                 # P12 (cg) = P12 (dh) = (1/8)(1 + cos(δ1 − δ2 ))
                 # P12 (ch) = P12 (dg) = (1/8)(1 − cos(δ1 − δ2 ))
+                # so we can test r-0.5 against them
                 r -= 0.5
-                if r < P12_02_23/2:
+
+                # P12_02_13 and P12_03_12 each max at 1/4, but describes
+                # prob for two possible stats. Split between the two
+                if r < P12_02_13:
                     tdata1['detector'] = 0
-                    data2['detector'][i2] = 2
-                elif r < P12_02_23:
-                    tdata1['detector'] = 2
-                    data2['detector'][i2] = 3
+                    tdata2['detector'] = 2
+                elif r < P12_02_13 * 2:
+                    tdata1['detector'] = 1
+                    tdata2['detector'] = 3
                 else:
-                    r -= P12_02_23
+                    r -= P12_02_13 * 2
                     if r < P12_03_12:
                         tdata1['detector'] = 0
-                        data2['detector'][i2] = 3
+                        tdata2['detector'] = 3
                     else:
                         tdata1['detector'] = 1
-                        data2['detector'][i2] = 2
+                        tdata2['detector'] = 2
 
 
 def make_data(rng, num, tstart, tend):

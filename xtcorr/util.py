@@ -1,25 +1,27 @@
-def save_sim(outfile, data1, data2, meta):
+from .constants import DETNAMES, PAIRS
+
+
+def save_sim(outfile, output, meta):
     import fitsio
     print('writing:', outfile)
     with fitsio.FITS(outfile, 'rw', clobber=True) as fits:
-        fits.write(data1, extname='data1')
-        fits.write(data2, extname='data2')
+        for detname, det_output in output.items():
+            fits.write(det_output, extname=detname)
         fits.write(meta, extname='meta')
 
 
 def load_sim(infile):
     import fitsio
     print('reading:', infile)
+
+    output = {}
     with fitsio.FITS(infile) as fits:
-        data1 = fits['data1'].read()
-        data2 = fits['data2'].read()
+        for name in DETNAMES:
+            # numba doesn't do non native byte order
+            output[name] = _byteswap(fits[name].read())
         meta = fits['meta'].read()
 
-    # numba doesn't do non native byte order
-    data1 = _byteswap(data1)
-    data2 = _byteswap(data2)
-
-    return data1, data2, meta
+    return output, meta
 
 
 def _byteswap(arr):
@@ -28,16 +30,13 @@ def _byteswap(arr):
     return arr
 
 
-def save_corr(outfile, dt, dy, dx, hist):
+def save_corr(outfile, pair_results):
     import fitsio
 
-    print(hist.shape)
     print('writing:', outfile)
     with fitsio.FITS(outfile, 'rw', clobber=True) as fits:
-        fits.write(dt, extname='dt')
-        fits.write(dy, extname='dy')
-        fits.write(dx, extname='dx')
-        fits.write(hist, extname='hist')
+        for key, data in pair_results.items():
+            fits.write(data, extname=key)
 
 
 def load_corr(infile):
@@ -47,25 +46,33 @@ def load_corr(infile):
 
     print('reading:', infile)
     with fitsio.FITS(infile) as fits:
-        for key in ['dt', 'dy', 'dx', 'hist']:
-            data[key] = fits[key].read()
+        for pair in PAIRS:
+            name = pair[0] + pair[1]
+            data[name] = fits[name].read()
 
     return data
 
 
-def make_sim_meta(seed, integration_time, delay, delay_sigma):
+def pack_corr_results(dt, hist):
+    import numpy as np
+
+    dtype = [('dt', 'f4'), ('num', 'i8')]
+    output = np.zeros(dt.size, dtype=dtype)
+
+    output['dt'] = dt
+    output['num'] = hist
+    return output
+
+
+def make_sim_meta(seed, integration_time):
     import numpy as np
 
     dtype = [
         ('seed', 'i8'),
         ('integration_time', 'f8'),
-        ('delay', 'f8'),
-        ('delay_sigma', 'f8'),
     ]
     meta = np.zeros(1, dtype=dtype)
     meta['seed'] = seed
     meta['integration_time'] = integration_time
-    meta['delay'] = delay
-    meta['delay_sigma'] = delay_sigma
 
     return meta

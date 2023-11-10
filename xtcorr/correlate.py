@@ -48,14 +48,10 @@ def correlate(
         tlow = tdata1['time'] + dtlow
         thigh = tdata1['time'] + dthigh
 
-        # times2[i2low] strictly >= val
         i2low = bisect_left(data2['time'], tlow, 0, n2-1)
-
-        # times2[i2high] strictly <= val
         i2high = bisect_right(data2['time'], thigh, i2low, n2-1)
-        # i2high = bisect_right(times2, thigh, 0, n2-1)
 
-        for i2 in range(i2low, i2high+1):
+        for i2 in range(i2low, i2high):
             tdata2 = data2[i2]
 
             dt = tdata2['time'] - tdata1['time']

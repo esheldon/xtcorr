@@ -46,9 +46,9 @@ def simulate_streams(
         times for events in detector h
     """
 
-    dt = tend - tstart
-    ndata1 = rng.poisson(rate1 * dt)
-    ndata2 = rng.poisson(rate2 * dt)
+    total_time = tend - tstart
+    ndata1 = rng.poisson(rate1 * total_time)
+    ndata2 = rng.poisson(rate2 * total_time)
 
     # TODO add background
     ntot1 = ndata1
@@ -110,13 +110,10 @@ def distribute_coincidences(rng, data1, data2, dt, P12_02_13, P12_03_12):
         tlow = tdata1['time'] - dt/2.0
         thigh = tdata1['time'] + dt/2.0
 
-        # times2[i2low] strictly >= val
         i2low = bisect_left(data2['time'], tlow, 0, n2-1)
-
-        # times2[i2high] strictly <= val
         i2high = bisect_right(data2['time'], thigh, i2low, n2-1)
 
-        for i2 in range(i2low, i2high+1):
+        for i2 in range(i2low, i2high):
             tdata2 = data2[i2]
 
             # found a coincidence, we will assign detectors according
@@ -177,6 +174,7 @@ def make_output_data(d1, d2):
     data = np.zeros(num, dtype=dt)
     data['time'][:d1.size] = d1['time']
     data['time'][d1.size:] = d2['time']
+    data.sort(order='time')
     return data
 
 

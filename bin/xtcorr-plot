@@ -28,6 +28,8 @@ def doplot(data, outfile):
     )
 
     ODSI = num / den
+    # ODSI = num
+    # ODSI = 1 / den
 
     ax.plot(data['cg']['dt'], ODSI, linestyle='-')
 

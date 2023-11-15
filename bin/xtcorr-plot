@@ -10,42 +10,43 @@ def get_args():
 
 
 def doplot(data, outfile):
-    import proplot as pplt
-    import numpy as np
+    import matplotlib.pyplot as mplt
 
-    fig, axs = pplt.subplots(ncols=2, share=False)
-    axs[0].set(
+    fig, ax = mplt.subplots()
+    ax.set(
         xlabel='delay [ns]',
-        ylabel='count',
-    )
-    axs[1].set(
-        xlabel='dx',
-        ylabel='dy',
+        ylabel='ODSI',
     )
 
-    thist = data['hist'].sum(axis=(0, 1))
-    terr = np.sqrt(thist)
-    axs[0].errorbar(data['dt'], thist, terr, linestyle='')
+    num = (
+        data['cg']['num'] + data['dh']['num']
+        - data['ch']['num'] - data['dg']['num']
+    )
+    den = (
+        data['cg']['num'] + data['dh']['num']
+        + data['ch']['num'] + data['dg']['num']
+    )
 
-    yxhist = data['hist'].sum(axis=2)
-    # w, = np.where(
-    #     (data['dt'] > 0.6) & (data['dt'] < 1.4)
+    ODSI = num / den
+    # ODSI = num
+    # ODSI = 1 / den
+
+    ax.plot(data['cg']['dt'], ODSI, linestyle='-')
+
+    # extent = [
+    #     data['dx'].min(),
+    #     data['dx'].max(),
+    #     data['dy'].min(),
+    #     data['dy'].max(),
+    # ]
+    # m = axs[1].imshow(
+    #     yxhist,
+    #     extent=extent,
     # )
-    # yxhist = data['hist'][:, :, w].sum(axis=2)
-    extent = [
-        data['dx'].min(),
-        data['dx'].max(),
-        data['dy'].min(),
-        data['dy'].max(),
-    ]
-    m = axs[1].imshow(
-        yxhist,
-        extent=extent,
-    )
-    axs[1].colorbar(m)
-
+    # axs[1].colorbar(m)
+    #
     print('writing:', outfile)
-    fig.savefig(outfile)
+    mplt.savefig(outfile)
 
 
 def main():

@@ -9,39 +9,41 @@ def get_args():
 
     parser.add_argument('--integration-time', type=float, default=10000,
                         help='integration time in nanoseconds')
-    parser.add_argument('--delay', type=float, default=1.0)
-    parser.add_argument('--delay-sigma', type=float, default=0.1)
+    parser.add_argument('--delta', type=float, default=0,
+                        help='delta1 - delta2')
     return parser.parse_args()
 
 
-def main(seed, integration_time, delay, delay_sigma, outfile):
+def main(seed, integration_time, delta, outfile):
     import numpy as np
     from xtcorr.sim import simulate_streams
     from xtcorr.util import save_sim, make_sim_meta
 
-    rng = np.random.RandomState(seed)
+    rng = np.random.default_rng(seed)
 
     print('simulating')
-    data1, data2 = simulate_streams(
+    output = simulate_streams(
         rng,
-        delay=delay,
-        delay_sigma=delay_sigma,
+        delta=delta,
         tend=integration_time,
     )
 
     meta = make_sim_meta(
-        seed=seed, integration_time=integration_time, delay=delay,
-        delay_sigma=delay_sigma,
+        seed=seed,
+        integration_time=integration_time,
     )
-    save_sim(outfile=args.outfile, data1=data1, data2=data2, meta=meta)
+    save_sim(
+        outfile=args.outfile,
+        output=output,
+        meta=meta,
+    )
 
 
 if __name__ == '__main__':
     args = get_args()
     main(
-        outfile=args.outfile,
         seed=args.seed,
-        delay=args.delay,
-        delay_sigma=args.delay_sigma,
         integration_time=args.integration_time,
+        delta=args.delta,
+        outfile=args.outfile,
     )

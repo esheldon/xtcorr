@@ -35,3 +35,6 @@ def test_sim_readwrite():
         for key in sim_data:
             for name in sim_data[key].dtype.names:
                 assert np.all(sim_data[key] == indata[key])
+
+        for name in meta.dtype.names:
+            assert np.all(meta[name] == inmeta[name])

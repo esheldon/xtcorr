@@ -18,6 +18,9 @@ def test_sim_smoke():
 
 
 def test_sim_write_smoke():
+    """
+    test we can do runs with data persistence
+    """
     seed = 8812
     integration_time = 10000
     rng = np.random.default_rng(seed)

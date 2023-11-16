@@ -1,5 +1,45 @@
 import numpy as np
 from numba import njit
+from .constants import PAIRS
+from .util import pack_corr_results
+
+
+def correlate_by_pairs(data, dtlow, dthigh, tbinsize):
+    """
+    correlate data by detector pairs
+
+    Parameters
+    ----------
+    data: dict
+        Dict holding data for each detector, c, g, d, h
+    dtlow: float
+        Lowest time difference of stream 2 relative to stream 1
+        Events from stream 2 will be within the window [dtlow, dthigh]
+    dthigh: float
+        Highest time difference of stream 2 relative to stream 1
+        Events from stream 2 will be within the window [dtlow, dthigh]
+    tbinsize: float
+        Binsize for time
+
+    Returns
+    -------
+    pair_results, dict keyed by detector pair, e.g. 'cg'
+    """
+    pair_results = {}
+    for pair in PAIRS:
+        key = pair[0] + pair[1]
+
+        dt, hist = correlate(
+            data1=data[pair[0]],
+            data2=data[pair[1]],
+
+            dtlow=dtlow,
+            dthigh=dthigh,
+            tbinsize=tbinsize,
+        )
+        pair_results[key] = pack_corr_results(dt, hist)
+
+    return pair_results
 
 
 @njit
@@ -11,6 +51,8 @@ def correlate(
     """
     cross correlate two time streams
 
+    Parameters
+    ----------
     data1: array
         The data for events in stream 1
     data2: array

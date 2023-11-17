@@ -14,27 +14,18 @@ def get_args():
 
 
 def main():
-    from xtcorr.util import load_sim, save_corr, pack_corr_results
-    from xtcorr.constants import PAIRS
-    from xtcorr.correlate import correlate
+    from xtcorr.util import load_sim, save_corr
+    from xtcorr.correlate import correlate_by_pairs
 
     args = get_args()
     indata, meta = load_sim(args.infile)
 
-    pair_results = {}
-    for pair in PAIRS:
-        key = pair[0] + pair[1]
-
-        dt, hist = correlate(
-            data1=indata[pair[0]],
-            data2=indata[pair[1]],
-
-            dtlow=args.dtlow,
-            dthigh=args.dthigh,
-            tbinsize=args.tbinsize,
-        )
-        pair_results[key] = pack_corr_results(dt, hist)
-
+    pair_results = correlate_by_pairs(
+        data=indata,
+        dtlow=args.dtlow,
+        dthigh=args.dthigh,
+        tbinsize=args.tbinsize,
+    )
     save_corr(outfile=args.outfile, pair_results=pair_results)
 
 

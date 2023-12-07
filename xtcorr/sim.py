@@ -6,6 +6,42 @@ from .constants import DETNAMES
 
 def simulate_streams(
     rng,
+    spec1,
+    spec2,
+    resolution=2000,  # lam/delta_lam
+    lam_low=300,  # nm
+    lam_high=1000,  # nm
+    tstart=0.0,
+    tend=10000.0,
+):
+    """
+    Generate streams for two sources
+
+
+    Parameters
+    ----------
+    rng: np.random.default_rng
+        The random number generator
+    spec1: Spectrum
+        A spectrum object for source 1
+    spec2: Spectrum
+        A spectrum object for source 2
+    resolution: float
+        Resolution R=lambda/delta_lambda
+    lam_low: float
+        Lowest wavelength to simulate
+    lam_high: float
+        Hightest wavelength to simulate
+    tstart: float
+        Start time
+    tend: float
+        End time
+    """
+    pass
+
+
+def simulate_streams_one(
+    rng,
     tstart=0.0,
     tend=10000.0,
     rate1=1.0,
@@ -14,10 +50,12 @@ def simulate_streams(
     dt=0.02,
 ):
     """
-    Simulate streams of data with real pairs and background
+    Simulate streams for two sources at a single wavelength
 
     Parameters
     ----------
+    rng: np.random.default_rng
+        The random number generator
     tstart: float
         Start time
     tend: float
@@ -50,14 +88,10 @@ def simulate_streams(
     ndata1 = rng.poisson(rate1 * total_time)
     ndata2 = rng.poisson(rate2 * total_time)
 
-    # TODO add background
-    ntot1 = ndata1
-    ntot2 = ndata2
-
     # photons from source 1
-    data1 = make_data(rng=rng, num=ntot1, tstart=tstart, tend=tend)
+    data1 = make_data(rng=rng, num=ndata2, tstart=tstart, tend=tend)
     # photons from source 2
-    data2 = make_data(rng=rng, num=ntot2, tstart=tstart, tend=tend)
+    data2 = make_data(rng=rng, num=ndata1, tstart=tstart, tend=tend)
 
     data1.sort(order='time')
     data2.sort(order='time')
@@ -88,8 +122,8 @@ def simulate_streams(
 @njit
 def distribute_coincidences(rng, data1, data2, dt, P12_02_13, P12_03_12):
     """
-    Given a stream of photons from a single source, distribute
-    to detectors.  Identify coincidences and distribute appropriately
+    Given streams of photons from two sources, distribute to detectors.
+    Identify coincidences and distribute appropriately
 
     rng: np.random.Generator
         e.g. from np.random.default_rng(seed)
@@ -153,8 +187,6 @@ def distribute_coincidences(rng, data1, data2, dt, P12_02_13, P12_03_12):
 def make_data(rng, num, tstart, tend):
     """
     make data, initialized with random draws
-
-    TODO add frequency
     """
     dt = [('time', 'f4'), ('detector', 'i2')]
     data = np.zeros(num, dtype=dt)

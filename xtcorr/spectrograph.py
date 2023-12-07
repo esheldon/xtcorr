@@ -8,6 +8,24 @@ class RSpecGraph(object):
         self.lam_max = lam_max
         self._make_bins()
 
+    def get_binnum(self, lam):
+        isscalar = np.isscalar(lam)
+        lam = np.array(lam, ndmin=1)
+        binnums = np.zeros(lam.size, dtype='i4')
+        binnums[:] = -1
+
+        w, = np.where(
+            (lam >= self.lam_min)
+            &
+            (lam <= self.lam_max)
+        )
+        binnums[w] = np.searchsorted(self.bins['end'], lam)
+
+        if isscalar:
+            binnums = binnums[0]
+
+        return binnums
+
     def _make_bins(self):
         dtype = [('start', 'f8'), ('end', 'f8')]
         bins = []
@@ -20,7 +38,9 @@ class RSpecGraph(object):
             one['start'] = lam
             one['end'] = lam + dlam
             bins.append(one)
-            bins.append((lam, lam + dlam))
+
             lam += dlam
+            if lam > self.lam_max:
+                break
 
         self.bins = np.hstack(bins)

@@ -1,3 +1,14 @@
+"""
+for du of 10 GHz, dt is about 0.1 nanoseconds
+
+If we use units of nanoseconds, then dt would be 0.1 (currently working at 0.02 in
+arbitrary units)
+
+Then would pick tend to be bigger as well by factor of ~10 to get similar stats
+at given wavelength
+
+Would need rates 10 times higher, 10 rather than 1
+"""
 import numpy as np
 from numba import njit
 from .correlate import bisect_left, bisect_right
@@ -8,11 +19,10 @@ def simulate_streams(
     rng,
     spec1,
     spec2,
-    resolution=2000,  # lam/delta_lam
-    lam_low=300,  # nm
-    lam_high=1000,  # nm
+    spec_graph,
     tstart=0.0,
-    tend=10000.0,
+    tend=100000.0,
+    dt=0.1,
 ):
     """
     Generate streams for two sources
@@ -26,12 +36,8 @@ def simulate_streams(
         A spectrum object for source 1
     spec2: Spectrum
         A spectrum object for source 2
-    resolution: float
-        Resolution R=lambda/delta_lambda
-    lam_low: float
-        Lowest wavelength to simulate
-    lam_high: float
-        Hightest wavelength to simulate
+    spec_graph: spectrograph object
+        E.g. .spectrgraph.RSpecGraph
     tstart: float
         Start time
     tend: float

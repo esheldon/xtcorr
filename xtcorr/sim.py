@@ -1,8 +1,8 @@
 """
 for du of 10 GHz, dt is about 0.1 nanoseconds
 
-If we use units of nanoseconds, then dt would be 0.1 (currently working at 0.02 in
-arbitrary units)
+If we use units of nanoseconds, then dt would be 0.1 (currently working at 0.02
+in arbitrary units)
 
 Then would pick tend to be bigger as well by factor of ~10 to get similar stats
 at given wavelength
@@ -10,6 +10,8 @@ at given wavelength
 Would need rates 10 times higher, 10 rather than 1
 """
 import numpy as np
+from numpy import pi as PI
+from numpy import sin
 from numba import njit
 from .correlate import bisect_left, bisect_right
 from .constants import DETNAMES
@@ -20,9 +22,13 @@ def simulate_streams(
     spec1,
     spec2,
     spec_graph,
+    B,
+    DL,
+    theta1,
+    theta2,
     tstart=0.0,
-    tend=100000.0,
-    dt=0.1,
+    tend=100000.0 * 1.0e-9,
+    dt=0.1 * 1.0e-9,
 ):
     """
     Generate streams for two sources
@@ -33,20 +39,132 @@ def simulate_streams(
     rng: np.random.default_rng
         The random number generator
     spec1: Spectrum
-        A spectrum object for source 1
+        A spectrum of source 1
     spec2: Spectrum
-        A spectrum object for source 2
+        A spectrum of source 2
     spec_graph: spectrograph object
         E.g. .spectrgraph.RSpecGraph
+    tstart: float
+        Start time in seconds
+    tend: float
+        End time in seconds
+    """
+
+    output = {}
+    for wave_bin in range(spec_graph.bins.size):
+
+        lam1 = spec1.sample(
+            rng=rng,
+            dt=dt,
+            lam_min=spec_graph.bins['start'][wave_bin],
+            lam_max=spec_graph.bins['end'][wave_bin],
+            area=spec_graph.area,
+        )
+        lam2 = spec2.sample(
+            rng=rng,
+            dt=dt,
+            lam_min=spec_graph.bins['start'][wave_bin],
+            lam_max=spec_graph.bins['end'][wave_bin],
+            area=spec_graph.area,
+        )
+        # TODO is this OK?
+        lam_mean = 0.5 * (spec_graph.bins['start'] + spec_graph.bins['end'])
+        delta1 = 2 * PI * (B * sin(theta1) - DL) / lam_mean
+        delta2 = 2 * PI * (B * sin(theta2) - 0) / lam_mean
+        delta = delta1 - delta2
+
+        ndata1 = lam1.sample.size
+        ndata2 = lam2.sample.size
+        toutput = simulate_streams_wave_bin(
+            rng=rng,
+            ndata1=ndata1,
+            ndata2=ndata2,
+            tstart=tstart,
+            tend=tend,
+            delta=delta,
+            dt=dt,
+        )
+        for key in toutput:
+            toutput[key]['wave_bin'] = wave_bin
+            if key not in output:
+                output[key] = [toutput[key]]
+            else:
+                output[key].append(toutput[key])
+    return output
+
+
+def simulate_streams_wave_bin(
+    rng,
+    ndata1,
+    ndata2,
+    tstart,
+    tend,
+    delta,
+    dt,
+):
+    """
+    Simulate streams for two sources in a wavelength bin
+
+    Parameters
+    ----------
+    rng: np.random.default_rng
+        The random number generator
     tstart: float
         Start time
     tend: float
         End time
+    delta: float
+        Difference delta1 - delta2
+    dt: float
+        Source photons within this time difference are considered
+        as coincicent
+
+    Returns
+    --------
+    dict with these entries
+
+    data_c: array
+        times for events in detector c
+    data_d: array
+        times for events in detector d
+    data_g: array
+        times for events in detector g
+    data_h: array
+        times for events in detector h
     """
-    pass
+
+    # photons from source 1
+    data1 = make_data(rng=rng, num=ndata2, tstart=tstart, tend=tend)
+    # photons from source 2
+    data2 = make_data(rng=rng, num=ndata1, tstart=tstart, tend=tend)
+
+    data1.sort(order='time')
+    data2.sort(order='time')
+
+    # these max at 1/4
+    P12_02_13 = (1/8) * (1 + np.cos(delta))
+    P12_03_12 = (1/8) * (1 - np.cos(delta))
+    print(f'P12_02_13: {P12_02_13} P12_03_12: {P12_03_12}')
+
+    distribute_coincidences(
+        rng=rng,
+        data1=data1,
+        data2=data2,
+        dt=dt,
+        P12_02_13=P12_02_13,
+        P12_03_12=P12_03_12,
+    )
+
+    output = {}
+    for detector, detname in enumerate(DETNAMES):
+        w1, = np.where(data1['detector'] == detector)
+        w2, = np.where(data2['detector'] == detector)
+        output[detname] = make_output_data(data1[w1], data2[w2])
+
+    return output
 
 
-def simulate_streams_one(
+def simulate_streams_old(
     rng,
     tstart=0.0,
     tend=10000.0,
@@ -194,7 +312,7 @@ def make_data(rng, num, tstart, tend):
     """
     make data, initialized with random draws
     """
-    dt = [('time', 'f4'), ('detector', 'i2')]
+    dt = [('time', 'f4'), ('wave_bin', 'i4'), ('detector', 'i2')]
     data = np.zeros(num, dtype=dt)
     data['time'] = rng.uniform(low=tstart, high=tend, size=num)
 

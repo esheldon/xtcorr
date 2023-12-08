@@ -2,10 +2,25 @@ import numpy as np
 
 
 class RSpecGraph(object):
-    def __init__(self, R, lam_min, lam_max):
+    """
+    Constant R=lambda/dlambda spectrograph
+
+    Parameters
+    -----------
+    R: float
+        Resolution lambda/dlambda
+    lam_min: float
+        Minimum wavelength accepted by spectrgraph
+    lam_max: float
+        Maximum wavelength accepted by spectrgraph
+    area: float
+        Area of detector
+    """
+    def __init__(self, R, lam_min, lam_max, area):
         self.R = R
         self.lam_min = lam_min
         self.lam_max = lam_max
+        self.area = area
         self._make_bins()
 
     def get_binnum(self, lam):

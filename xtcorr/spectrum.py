@@ -58,6 +58,7 @@ class FlatSpectrum(object):
         """
 
         num = self.get_num(dt, lam_min=lam_min, lam_max=lam_max, area=area)
+        print('num:', num)
         num = rng.poisson(num)
         return rng.uniform(
             low=lam_min,

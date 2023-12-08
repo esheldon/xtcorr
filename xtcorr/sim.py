@@ -57,20 +57,22 @@ def simulate_streams(
         # in angstroms
         lam_min = spec_graph.bins['start'][wave_bin]
         lam_max = spec_graph.bins['end'][wave_bin]
+        print(lam_min, lam_max)
         lam1 = spec1.sample(
             rng=rng,
-            dt=dt,
+            dt=tend - tstart,
             lam_min=lam_min,
             lam_max=lam_max,
             area=spec_graph.area,
         )
         lam2 = spec2.sample(
             rng=rng,
-            dt=dt,
+            dt=tend - tstart,
             lam_min=lam_min,
             lam_max=lam_max,
             area=spec_graph.area,
         )
+        print(lam1.size)
         # TODO is this OK?
         lam_mean = 0.5 * (lam_min + lam_max)
         lam_mean_meters = lam_mean / 1.0e10

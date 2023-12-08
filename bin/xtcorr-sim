@@ -12,7 +12,8 @@ def get_args():
 
     parser.add_argument('--integration-time',
                         type=float,
-                        default=100_000 * 1.0e-9,
+                        # default=100_000 * 1.0e-9,
+                        default=1,
                         help='integration time in nanoseconds')
     parser.add_argument('--theta1', type=float, required=True,
                         help='theta for source 1')

@@ -1,4 +1,5 @@
 """
+TODO: Fix area
 for du of 10 GHz, dt is about 0.1 nanoseconds
 
 If we use units of nanoseconds, then dt would be 0.1 (currently working at 0.02
@@ -22,13 +23,13 @@ def simulate_streams(
     spec1,
     spec2,
     spec_graph,
-    B,
-    DL,
     theta1,
     theta2,
     tstart=0.0,
-    tend=100000.0 * 1.0e-9,
+    tend=100_000 * 1.0e-9,
     dt=0.1 * 1.0e-9,
+    B=200,  # meters
+    DL=0.001,  # 1 millimeter
 ):
     """
     Generate streams for two sources
@@ -53,28 +54,33 @@ def simulate_streams(
     output = {}
     for wave_bin in range(spec_graph.bins.size):
 
+        # in angstroms
+        lam_min = spec_graph.bins['start'][wave_bin]
+        lam_max = spec_graph.bins['end'][wave_bin]
         lam1 = spec1.sample(
             rng=rng,
             dt=dt,
-            lam_min=spec_graph.bins['start'][wave_bin],
-            lam_max=spec_graph.bins['end'][wave_bin],
+            lam_min=lam_min,
+            lam_max=lam_max,
             area=spec_graph.area,
         )
         lam2 = spec2.sample(
             rng=rng,
             dt=dt,
-            lam_min=spec_graph.bins['start'][wave_bin],
-            lam_max=spec_graph.bins['end'][wave_bin],
+            lam_min=lam_min,
+            lam_max=lam_max,
             area=spec_graph.area,
         )
         # TODO is this OK?
-        lam_mean = 0.5 * (spec_graph.bins['start'] + spec_graph.bins['end'])
-        delta1 = 2 * PI * (B * sin(theta1) - DL) / lam_mean
-        delta2 = 2 * PI * (B * sin(theta2) - 0) / lam_mean
+        lam_mean = 0.5 * (lam_min + lam_max)
+        lam_mean_meters = lam_mean / 1.0e10
+        delta1 = 2 * PI * (B * sin(np.radians(theta1)) - DL) / lam_mean_meters
+        delta2 = 2 * PI * (B * sin(np.radians(theta2)) - 0) / lam_mean_meters
         delta = delta1 - delta2
 
-        ndata1 = lam1.sample.size
-        ndata2 = lam2.sample.size
+        ndata1 = lam1.size
+        ndata2 = lam2.size
+
         toutput = simulate_streams_wave_bin(
             rng=rng,
             ndata1=ndata1,
@@ -90,6 +96,10 @@ def simulate_streams(
                 output[key] = [toutput[key]]
             else:
                 output[key].append(toutput[key])
+
+    for key in output:
+        output[key] = np.hstack(output[key])
+
     return output
 
 
@@ -326,9 +336,11 @@ def make_data(rng, num, tstart, tend):
 def make_output_data(d1, d2):
     num = d1.size + d2.size
 
-    dt = [('time', 'f4')]
+    dt = [('time', 'f4'), ('wave_bin', 'i4')]
     data = np.zeros(num, dtype=dt)
+
     data['time'][:d1.size] = d1['time']
     data['time'][d1.size:] = d2['time']
+
     data.sort(order='time')
     return data

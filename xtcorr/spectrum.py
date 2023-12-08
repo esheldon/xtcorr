@@ -1,6 +1,14 @@
 import numpy as np
 
 
+def make_spectrum(config, name=None):
+    if config['spec_type'] == 'flat':
+        spec = FlatSpectrum(rate=config['rate'], name=name)
+    else:
+        raise ValueError(f'bad spec_type: {config["spec_type"]}')
+    return spec
+
+
 class FlatSpectrum(object):
     def __init__(self, rate, name=None):
         """
@@ -26,8 +34,9 @@ class FlatSpectrum(object):
         lam_max: float
             Maximum lambda value
         area: float
-            Area of detector in cm^2
+            Area of detector in m^2
         """
+        area_cm = area * 100**2
         return self.rate * dt * area * (lam_max - lam_min)
 
     def sample(self, rng, dt, lam_min, lam_max, area):
@@ -45,12 +54,12 @@ class FlatSpectrum(object):
         lam_max: float
             Maximum lambda value
         area: float
-            Area of detector in cm^2
+            Area of detector in m^2
         """
 
-        num = self.get_num(dt, lam_min=lam_min, lam_max=lam_max)
-        num = np.poisson(num)
-        return self.rng.uniform(
+        num = self.get_num(dt, lam_min=lam_min, lam_max=lam_max, area=area)
+        num = rng.poisson(num)
+        return rng.uniform(
             low=lam_min,
             high=lam_max,
             size=num

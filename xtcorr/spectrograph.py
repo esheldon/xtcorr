@@ -14,7 +14,7 @@ class RSpecGraph(object):
     lam_max: float
         Maximum wavelength accepted by spectrgraph
     area: float
-        Area of detector
+        Area of detector in meters squared
     """
     def __init__(self, R, lam_min, lam_max, area):
         self.R = R

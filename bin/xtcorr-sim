@@ -1,40 +1,82 @@
 #!/usr/bin/env python
 
+import yaml
+
 
 def get_args():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--outfile', required=True)
     parser.add_argument('--seed', type=int, required=True)
+    parser.add_argument('--config', required=True)
 
-    parser.add_argument('--integration-time', type=float, default=10000,
+    parser.add_argument('--integration-time',
+                        type=float,
+                        default=100_000 * 1.0e-9,
                         help='integration time in nanoseconds')
-    parser.add_argument('--delta', type=float, default=0,
-                        help='delta1 - delta2')
+    parser.add_argument('--theta1', type=float, required=True,
+                        help='theta for source 1')
+    parser.add_argument('--theta2', type=float, required=True,
+                        help='theta for source 2')
     return parser.parse_args()
 
 
-def main(seed, integration_time, delta, outfile):
+def main(
+    seed,
+    config,
+    integration_time,
+    theta1,
+    theta2,
+    outfile,
+):
     import numpy as np
     from xtcorr.sim import simulate_streams
     from xtcorr.util import save_sim, make_sim_meta
+    from xtcorr.spectrum import make_spectrum
+    from xtcorr.spectrograph import RSpecGraph
+
+    with open(config) as fobj:
+        config = yaml.safe_load(fobj)
 
     rng = np.random.default_rng(seed)
 
+    spec1 = make_spectrum(config['source1'], name='source1')
+    spec2 = make_spectrum(config['source2'], name='source2')
+    spec_config = config['spec_graph']
+
+    spec_graph = RSpecGraph(
+        spec_config['R'],
+        lam_min=spec_config['lam_min'],
+        lam_max=spec_config['lam_max'],
+        area=spec_config['area'],
+    )
     print('simulating')
     output = simulate_streams(
         rng,
-        delta=delta,
+        spec1=spec1,
+        spec2=spec2,
+        spec_graph=spec_graph,
+        theta1=theta1,
+        theta2=theta2,
+        tstart=0,
         tend=integration_time,
+        B=config['observatories']['B'],
+        DL=config['observatories']['DL'],
+        dt=config['dt'],
     )
 
     meta = make_sim_meta(
         seed=seed,
         integration_time=integration_time,
+        theta1=theta1,
+        theta2=theta2,
     )
+
     save_sim(
-        outfile=args.outfile,
+        outfile=outfile,
         output=output,
+        config=config,
+        lam_bins=spec_graph.bins,
         meta=meta,
     )
 
@@ -43,7 +85,9 @@ if __name__ == '__main__':
     args = get_args()
     main(
         seed=args.seed,
+        config=args.config,
         integration_time=args.integration_time,
-        delta=args.delta,
+        theta1=args.theta1,
+        theta2=args.theta2,
         outfile=args.outfile,
     )
